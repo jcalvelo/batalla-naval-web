@@ -1,13 +1,136 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/*body {*/
+/*  margin: 0;*/
+/*  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',*/
+/*    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',*/
+/*    sans-serif;*/
+/*  -webkit-font-smoothing: antialiased;*/
+/*  -moz-osx-font-smoothing: grayscale;*/
+/*}*/
+
+/*code {*/
+/*  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',*/
+/*    monospace;*/
+/*}*/
+
+h1 {
+    height: 40px;
+    margin-top: 40px;
+    margin-bottom: 40px;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin-left: auto;
+    margin-right: auto;
+    height: 100%;
+    width: 1200px;
+}
+
+body {
+    color: #222;
+    font-family: "Helvetica Neue", sans-serif;
+    font-weight: 200;
+    margin-left: 60px;
+}
+
+.react-draggable, .cursor {
+    cursor: move;
+}
+
+.no-cursor {
+    cursor: auto;
+}
+
+.cursor-y {
+    cursor: ns-resize;
+}
+
+.cursor-x {
+    cursor: ew-resize;
+}
+
+.react-draggable strong {
+    background: #ddd;
+    border: 1px solid #999;
+    border-radius: 3px;
+    display: block;
+    margin-bottom: 10px;
+    padding: 3px 5px;
+    text-align: center;
+}
+
+.box {
+    background: #fff;
+    border: 1px solid #999;
+    border-radius: 3px;
+    width: 180px;
+    height: 180px;
+    margin: 10px;
+    padding: 10px;
+    float: left;
+}
+
+.ship {
+    background: darkred;
+    /*background-image: url('./placeholderShip.png');*/
+    border: 1px solid #999;
+    border-radius: .3rem;
+    position: absolute;
+}
+
+.no-pointer-events {
+    pointer-events: none;
+}
+
+.hovered {
+    background-color: gray;
+}
+
+.boardTableStyle {
+    width: 100%;
+    height: 100%;
+}
+
+.cellStyle {
+    border: 1px solid black;
+    width: 60px;
+    height: 60px;
+}
+
+tr, td {
+    margin: 0;
+    padding: 0;
+}
+
+.grid-container {
+    display: grid;
+    width: 600px;
+    grid-template-columns: 60px 60px 60px 60px 60px 60px 60px 60px 60px 60px;
+    grid-template-rows:  60px 60px 60px 60px 60px 60px 60px 60px 60px 60px;
+    background-color: #2196F3;
+    /*padding: 10px;*/
+}
+
+.grid-item {
+    background-color: rgba(255, 255, 255, 0.8);
+    border: 1px solid black;
+    padding: 0;
+    /*height: 60px;*/
+    /*width: 60px;*/
+    font-size: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/*
+ * RemWrapper needs to take it's styles from this element,
+ * and this element can't have an absolute position after it's kicked in.
+ * AFAIK it's not possible to do this directly in the RemWrapper component.
+ */
+.rem-position-fix {
+    position: static !important;
 }
