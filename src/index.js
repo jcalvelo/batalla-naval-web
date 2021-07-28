@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 import Draggable from "react-draggable";
+import Pusher from 'pusher-js';
 
 //reglas https://www.hasbro.com/common/instruct/Battleship.PDF
 
@@ -28,10 +29,19 @@ class Ship extends React.Component {
             <Draggable grid={[60, 60]} onDrag={this.props.onDrag}
                        bounds='body' onStart={() => this.props.dragEnabled}>
                 <div style={shipStyle} className="ship" id={this.props.id}>
-                    <button onClick={() => {
-                        this.props.rotate(this.props.id)
-                    }}>R
-                    </button>
+
+                    {function () {
+                        if (this.props.dragEnabled) {
+                            return (
+                                <button onClick={() => {
+                                    this.props.rotate(this.props.id)
+                                }}>R
+                                </button>
+                            )
+                        }
+                    }.call(this)}
+
+
                     <div>x: {this.props.shipData.deltaPosition.x.toFixed(0)},
                         y: {this.props.shipData.deltaPosition.y.toFixed(0)}</div>
                     {/*<img src='placeholderShip.png' alt='Ship Image'/>*/}
@@ -43,12 +53,135 @@ class Ship extends React.Component {
 }
 
 
+class Home extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            joinCode: ''
+        }
+    }
+
+    newGameRoom() {
+        const chars = '0123456789';
+        const roomId = new Array(4).fill('').map(() => chars[Math.floor(Math.random() * 100) % chars.length]).join('');
+
+        this.props.joinRoom(true, roomId);
+    }
+
+
+    joinGameRoom() {
+        this.props.joinRoom(false, this.state.joinCode);
+    }
+
+
+    render() {
+        return (
+            <div style={{height: '100vh', display: 'flex', alignItems: 'center'}}>
+                <div style={{
+                    display: 'grid',
+                    height: '20rem',
+                    width: '50%',
+                    justifyItems: 'end',
+                    position: 'relative',
+                    top: '-15vh',
+                    paddingRight: '2rem',
+                    borderRightColor: 'black',
+                    borderRightStyle: 'solid',
+                }}>
+
+                    <button style={{height: '5rem', alignSelf: "center"}} onClick={() => {
+                        this.newGameRoom();
+                    }}>Crear una Sala
+                    </button>
+                </div>
+                <div style={{
+                    display: 'grid',
+                    height: '5rem',
+                    width: '50%',
+                    justifyItems: 'start',
+                    position: 'relative',
+                    top: '-15vh',
+                    paddingLeft: '2rem'
+                }}>
+                    <input onChange={(e) => {
+                        this.setState({
+                            joinCode: e.target.value
+                        })
+                    }} type="text" id="gameId" name="gameId"/>
+                    <br/>
+                    <button onClick={() => {
+                        this.joinGameRoom();
+                    }}>Unirse un Juego
+                    </button>
+                </div>
+            </div>
+        )
+    }
+}
+
+function TargetingCell(props) {
+
+    switch (props.status) {
+        case 'hit':
+            return (
+                <div key={`targeting${props.i}`} className="grid-item">
+                    H
+                </div>
+            )
+        case 'water':
+            return (
+                <div key={`targeting${props.i}`} className="grid-item">
+                    W
+                </div>
+            )
+        case 'shot':
+            return (
+                <div key={`targeting${props.i}`} className="grid-item">
+                    ⏳
+                </div>
+            )
+        default:
+            return (
+                <div key={`targeting${props.i}`} className="grid-item">
+                    <button className="cellButton"
+                            onClick={() => props.onClick(props.i)}>{props.i}</button>
+                </div>
+            )
+
+    }
+}
+
+
+class TargetingBoard extends React.Component {
+
+
+    render() {
+        const shipBoardMarkup = []
+        for (let i = 0; i < 100; i++) {
+            shipBoardMarkup.push(
+                <TargetingCell key={i} status={this.props.targetingBoard[i]} i={i}
+                               onClick={() => this.props.fireShot(i)}
+                > </TargetingCell>
+            )
+        }
+
+        return (
+            <div className="grid-container">{shipBoardMarkup}</div>
+
+        );
+    }
+}
+
+
 class App extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
             ships: Array(5).fill(null),
-            dragEnabled: true
+            dragEnabled: true,
+            gameState: 'home',
+            roomCode: '',
+            firstPlayer: null,
         }
 
         this.state.ships[0] = {
@@ -91,102 +224,8 @@ class App extends React.Component {
             size: 2,
             isVertical: false
         }
-
-
-        // this.state.ships[0] = {
-        //     id: 'carrier',
-        //     deltaPosition: {
-        //         x: 0, y: 0
-        //     },
-        //     size: 4,
-        //     drag: true,
-        //     isVertical: false
-        // }
-        // this.state.ships[1] = {
-        //     id: 'battleship1',
-        //     deltaPosition: {
-        //         x: 0, y: 0
-        //     },
-        //     size: 3,
-        //     drag: true,
-        //     isVertical: false
-        // }
-        // this.state.ships[2] = {
-        //     id: 'battleship2',
-        //     deltaPosition: {
-        //         x: 0, y: 0
-        //     },
-        //     size: 3,
-        //     drag: true,
-        //     isVertical: false
-        // }
-        // this.state.ships[3] = {
-        //     id: 'battleship3',
-        //     deltaPosition: {
-        //         x: 0, y: 0
-        //     },
-        //     size: 3,
-        //     drag: true,
-        //     isVertical: false
-        // }
-        // this.state.ships[4] = {
-        //     id: 'destroyer1',
-        //     deltaPosition: {
-        //         x: 0, y: 0
-        //     },
-        //     size: 2,
-        //     drag: true,
-        //     isVertical: false
-        // }
-        // this.state.ships[5] = {
-        //     id: 'destroyer2',
-        //     deltaPosition: {
-        //         x: 0, y: 0
-        //     },
-        //     size: 2,
-        //     drag: true,
-        //     isVertical: false
-        // }
-        // this.state.ships[6] = {
-        //     id: 'destroyer3',
-        //     deltaPosition: {
-        //         x: 0, y: 0
-        //     },
-        //     size: 2,
-        //     drag: true,
-        //     isVertical: false
-        // }
-        // this.state.ships[7] = {
-        //     id: 'frigate1',
-        //     deltaPosition: {
-        //         x: 0, y: 0
-        //     },
-        //     size: 1,
-        //     drag: true,
-        //     isVertical: false
-        // }
-        // this.state.ships[8] = {
-        //     id: 'frigate2',
-        //     deltaPosition: {
-        //         x: 0, y: 0
-        //     },
-        //     size: 1,
-        //     drag: true,
-        //     isVertical: false
-        // }
-
     }
 
-
-    // onControlledDrag = (e, position) => {
-    //     const {x, y} = position;
-    //     this.setState({controlledPosition: {x, y}});
-    // };
-    //
-    // onControlledDragStop = (e, position) => {
-    //     this.onControlledDrag(e, position);
-    //     this.onStop();
-    // };
 
     handleDrag(e, ui) {
 
@@ -244,7 +283,6 @@ class App extends React.Component {
         const tableroShips = Array(100).fill(0);
 
         let shipPositionIsValid = true;
-
         for (let i = 0; i < this.state.ships.length; i++) {
             const ship = this.state.ships[i];
             const row = ship.deltaPosition.y / 60;
@@ -267,113 +305,271 @@ class App extends React.Component {
 
 
         if (shipPositionIsValid) {
-            this.setState({
-                dragEnabled: false
+
+            const resultShipBoard = tableroShips.map((cell) => {
+                return (cell === 1)
             })
+
+            this.setState({
+                targetingBoard: Array(100).fill(''),
+                myBoardPos: resultShipBoard,
+                dragEnabled: false,
+                myShipsReady: true,
+            })
+
+            const data = {
+                player: this.state.firstPlayer ? 1 : 2,
+                roomCode: this.state.roomCode
+            }
+            this.postData('https://batalla-naval-functions.azurewebsites.net/api/ShipsReady?code=IlFCqJEehwONb7V4vayRl94ImqVUlboPTPYEGKOzxwSogjnxCaMaCg==', data)
+                .then(data => {
+                    console.log(data); // JSON data parsed by `data.json()` call
+                });
+
+
         }
 
     }
 
+    joinRoom(firstPlayer, roomCode) {
+
+        this.setState({
+            player1Score: 0,
+            player2Score: 0,
+            gameResult: '',
+            waitingForOpponent: firstPlayer,
+            firstPlayer: firstPlayer,
+            roomCode: roomCode,
+            gameState: 'game',
+            opponentShipsReady: false,
+            myShipsReady: false,
+        })
+        if (!firstPlayer) {
+            this.postData('https://batalla-naval-functions.azurewebsites.net/api/JoinRoom?code=kHiREw06ddtaKUB/wYxvdSvT8SXppY3k8k7Q7x7gXOkkMzOAamj6qQ==', {roomCode: roomCode})
+                .then(data => {
+                    // console.log(data); // JSON data parsed by `data.json()` call
+                });
+
+        }
+        this.pusher(roomCode, firstPlayer);
+    }
+
+    pusher(roomCode, firstPlayer) {
+        // const username = window.prompt('Username: ', 'Anonymous');
+        // this.setState({username});
+        const pusher = new Pusher('1ec2d1f70b84040e4f89', {
+            cluster: 'us2',
+            encrypted: true
+        });
+        const channel = pusher.subscribe(roomCode);
+        if (firstPlayer) {
+            channel.bind('playerConnected', data => {
+                if (data === 'Opponent found') {
+                    this.setState({
+                        waitingForOpponent: false,
+                        opponentShipsReady: false,
+                        myShipsReady: false,
+                    })
+                }
+            });
+        }
+
+        channel.bind('chat', data => {
+
+        })
+        channel.bind('shipsReady', data => {
+            if ((this.state.firstPlayer && data.player === '2') || (!this.state.firstPlayer && data.player === '1')) {
+                this.setState({
+                    opponentShipsReady: true
+                })
+            }
+        })
+        channel.bind('shots', data => {
+            if ((this.state.firstPlayer && data.player === '2') || (!this.state.firstPlayer && data.player === '1')) {
+                this.setState({
+                    incomingShotReady: true,
+                    incomingShotCell: data.cellTarget,
+                })
+            }
+            this.processShots();
+        })
+        channel.bind('shotsResult', data => {
+            if (data.player === '1' && data.result) {
+                this.setState({
+                    player1Score: this.state.player1Score + 1
+                })
+            } else if (data.player === '2' && data.result) {
+                this.setState({
+                    player2Score: this.state.player2Score + 1
+                })
+            }
+
+            if (this.state.player1Score === 17 || this.state.player2Score === 17) {
+                if (this.state.player1Score === 17 && this.state.player2Score === 17) {
+                    this.setState({
+                        gameState: 'finished',
+                        gameStatus: 'Empate'
+                    })
+                } else if (this.state.player1Score === 17) {
+                    this.setState({
+                        gameState: 'finished',
+                        gameStatus: 'Gana Jugador 1'
+                    })
+                } else {
+                    this.setState({
+                        gameState: 'finished',
+                        gameStatus: 'Gana Jugador 2'
+                    })
+                }
+            }
+
+
+            if ((this.state.firstPlayer && data.player === '2') || (!this.state.firstPlayer && data.player === '1')) {
+
+                const auxTargetingBoard = this.state.targetingBoard;
+
+                auxTargetingBoard[this.state.myShotCell] = data.result ? 'hit' : 'water'
+
+                this.setState({
+                    targetingBoard: auxTargetingBoard,
+                    incomingShotReady: false,
+                    incomingShotCell: -1,
+                    myShotReady: false,
+                    myShotCell: -1,
+                })
+            }
+        })
+    }
+
+    fireShot(i) {
+        if (!this.state.myShotReady) {
+            const shotConfirmed = window.confirm(`Confirme que quiere disparar en la posicion ${i + 1}`)
+            if (shotConfirmed) {
+
+
+                const data = {
+                    shot: i,
+                    player: this.state.firstPlayer ? 1 : 2,
+                    roomCode: this.state.roomCode
+                }
+
+                this.postData('https://batalla-naval-functions.azurewebsites.net/api/FireShot?code=GUicII27OCGNM2EXbQ/631qEHzUNVSF7svcPcjdnM9jYxNhxdFFIbw==', data)
+                    .then(data => {
+                        console.log(data); // JSON data parsed by `data.json()` call
+                    });
+
+
+                const auxTargetingBoard = this.state.targetingBoard;
+                auxTargetingBoard[i] = 'shot';
+                this.setState({
+                    targetingBoard: auxTargetingBoard,
+                    myShotReady: true,
+                    myShotCell: i,
+                })
+            }
+        }
+    }
+
+
+    processShots() {
+        if (this.state.incomingShotReady && this.state.myShotReady) {
+
+            const data = {
+                shotResult: this.state.myBoardPos[this.state.incomingShotCell],
+                player: this.state.firstPlayer ? 1 : 2,
+                roomCode: this.state.roomCode
+            }
+
+            this.postData('https://batalla-naval-functions.azurewebsites.net/api/ShotResult?code=qRX2msyeXqiajjtEwyGUEJDLag3HOaYlYK2sBPeFFReDTXPrzUm2EA==', data)
+                .then(data => {
+                    console.log(data); // JSON data parsed by `data.json()` call
+                });
+
+        }
+    }
 
     render() {
 
-        const shipMarkup = [];
 
-        for (let i = 0; i < this.state.ships.length; i++) {
-            shipMarkup.push(this.renderShip(i))
-        }
-
-        const shipBoardMarkup = []
-
-        for (let i = 0; i < 100; i++) {
-            shipBoardMarkup.push(<div key={i} className="grid-item">{i}</div>)
-        }
-
-        return (
-            <div>
-                <h1>Batalla Naval</h1>
-
-                <div className='board1Container'>
-
-                    <div style={{display: "flex", columnCount: '2', columnGap: '60px'}}>
-                        {shipMarkup}
-                        <div className="grid-container">
-                            {shipBoardMarkup}
-                        </div>
-
-                        <button style={{width: '100%', height: '60px'}}
-                                onClick={() => this.confirmarPosicionBarcos()}>Confirmar Barcos
-                        </button>
-
-
+        switch (this.state.gameState) {
+            case 'home':
+                return (
+                    <div>
+                        <Home joinRoom={(firstPlayer, roomCode) => this.joinRoom(firstPlayer, roomCode)}> </Home>
                     </div>
 
+                )
+            case 'game':
+                const shipMarkup = [];
+                for (let i = 0; i < this.state.ships.length; i++) {
+                    shipMarkup.push(this.renderShip(i))
+                }
+                const shipBoardMarkup = []
+                for (let i = 0; i < 100; i++) {
+                    shipBoardMarkup.push(<div key={i} className="grid-item">{i}</div>)
+                }
+                return (
+                    <div>
+                        <h1>Batalla Naval</h1>
+                        <h2 style={{position: 'absolute', top: '0', right: '2rem'}}>Room
+                            Code: {this.state.roomCode}</h2>
+                        <h2 style={{
+                            position: 'absolute',
+                            top: '2rem',
+                            right: '2rem'
+                        }}>Jugador1{this.state.firstPlayer ? '(Yo)' : ''}: {this.state.player1Score} -
+                            Jugador2{!this.state.firstPlayer ? '(Yo)' : ''}: {this.state.player2Score}</h2>
+                        <div className='board1Container'>
 
-                </div>
-
-
-                {/*<Draggable onStart={() => false}>*/}
-                {/*    <div className="box">I don't want to be dragged</div>*/}
-                {/*</Draggable>*/}
-                {/*<Draggable onDrag={this.handleDrag} {...dragHandlers}>*/}
-                {/*    <div className="box">*/}
-                {/*        <div>I track my deltas</div>*/}
-                {/*        <div>x: {deltaPosition.x.toFixed(0)}, y: {deltaPosition.y.toFixed(0)}</div>*/}
-                {/*    </div>*/}
-                {/*</Draggable>*/}
-
-
-                {/*<Draggable grid={[25, 25]} {...dragHandlers}>*/}
-                {/*    <div className="box">I snap to a 25 x 25 grid</div>*/}
-                {/*</Draggable>*/}
-                {/*<Draggable grid={[50, 50]} {...dragHandlers}>*/}
-                {/*    <div className="box">I snap to a 50 x 50 grid</div>*/}
-                {/*</Draggable>*/}
-
-                {/*<Draggable {...dragHandlers}>*/}
-                {/*    <div className="box drop-target" onMouseEnter={this.onDropAreaMouseEnter}*/}
-                {/*         onMouseLeave={this.onDropAreaMouseLeave}>I can detect drops from the next box.*/}
-                {/*    </div>*/}
-                {/*</Draggable>*/}
-                {/*<Draggable {...dragHandlers} onStop={this.onDrop}>*/}
-                {/*    <div className={`box ${this.state.activeDrags ? "no-pointer-events" : ""}`}>I can be dropped onto*/}
-                {/*        another box.*/}
-                {/*    </div>*/}
-                {/*</Draggable>*/}
-
-                {/*<Draggable bounds="body" {...dragHandlers}>*/}
-                {/*    <div className="box">*/}
-                {/*        I can only be moved within the confines of the body element.*/}
-                {/*    </div>*/}
-                {/*</Draggable>*/}
-
-                {/*<Draggable position={controlledPosition} {...dragHandlers} onDrag={this.onControlledDrag}>*/}
-                {/*    <div className="box">*/}
-                {/*        My position can be changed programmatically. <br/>*/}
-                {/*        I have a drag handler to sync state.*/}
-                {/*        <div>*/}
-                {/*            <a href="#" onClick={this.adjustXPos}>Adjust x ({controlledPosition.x})</a>*/}
-                {/*        </div>*/}
-                {/*        <div>*/}
-                {/*            <a href="#" onClick={this.adjustYPos}>Adjust y ({controlledPosition.y})</a>*/}
-                {/*        </div>*/}
-                {/*    </div>*/}
-                {/*</Draggable>*/}
-                {/*<Draggable position={controlledPosition} {...dragHandlers} onStop={this.onControlledDragStop}>*/}
-                {/*    <div className="box">*/}
-                {/*        My position can be changed programmatically. <br/>*/}
-                {/*        I have a dragStop handler to sync state.*/}
-                {/*        <div>*/}
-                {/*            <a href="#" onClick={this.adjustXPos}>Adjust x ({controlledPosition.x})</a>*/}
-                {/*        </div>*/}
-                {/*        <div>*/}
-                {/*            <a href="#" onClick={this.adjustYPos}>Adjust y ({controlledPosition.y})</a>*/}
-                {/*        </div>*/}
-                {/*    </div>*/}
-                {/*</Draggable>*/}
-
-            </div>
-        );
+                            <div style={{display: "flex", columnCount: '2', columnGap: '60px'}}>
+                                {shipMarkup}
+                                <div className="grid-container">
+                                    {shipBoardMarkup}
+                                </div>
+                                {function () {
+                                    if (this.state.waitingForOpponent) {
+                                        return (
+                                            <div>
+                                                Esperando un oponente...
+                                            </div>
+                                        )
+                                    } else if (!this.state.myShipsReady) {
+                                        return (
+                                            <button style={{width: '100%', height: '60px'}}
+                                                    onClick={() => this.confirmarPosicionBarcos()}>Confirmar Barcos
+                                            </button>
+                                        )
+                                    } else if (!this.state.opponentShipsReady) {
+                                        return (
+                                            <div>
+                                                Esperando que el oponente confirme su formación de Barcos...
+                                            </div>
+                                        )
+                                    } else {
+                                        return (
+                                            <TargetingBoard
+                                                myShotReady={this.state.myShotReady}
+                                                fireShot={(i) => this.fireShot(i)}
+                                                // fireShot={(i) => console.log(this)}
+                                                targetingBoard={this.state.targetingBoard}> </TargetingBoard>
+                                        )
+                                    }
+                                }.call(this)}
+                            </div>
+                        </div>
+                    </div>
+                );
+            case 'finished':
+                return (
+                    <div>
+                        <h1>{this.state.gameStatus}</h1>
+                    </div>
+                )
+            default:
+                return (
+                    <div>Se rompio</div>
+                )
+        }
     }
 
 
@@ -381,53 +577,30 @@ class App extends React.Component {
     inRange(number, min, max) {
         return (number >= min && number <= max);
     }
+
+    async postData(url = '', data = {}) {
+        // Opciones por defecto estan marcadas con un *
+        const response = await fetch(url, {
+            method: 'POST', // *GET, POST, PUT, DELETE, etc.
+            mode: 'cors', // no-cors, *cors, same-origin
+            cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
+            credentials: 'same-origin', // include, *same-origin, omit
+            headers: {
+                'Content-Type': 'application/json'
+                // 'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            redirect: 'follow', // manual, *follow, error
+            referrerPolicy: 'no-referrer', // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
+            body: JSON.stringify(data) // body data type must match "Content-Type" header
+        });
+        return response.json(); // parses JSON response into native JavaScript objects
+    }
 }
 
-//
-// class RemWrapper extends React.Component {
-//     // PropTypes is not available in this environment, but here they are.
-//     // static propTypes = {
-//     //   style: PropTypes.shape({
-//     //     transform: PropTypes.string.isRequired
-//     //   }),
-//     //   children: PropTypes.node.isRequired,
-//     //   remBaseline: PropTypes.number,
-//     // }
-//
-//     translateTransformToRem(transform, remBaseline = 16) {
-//         const convertedValues = transform.replace('translate(', '').replace(')', '')
-//             .split(',')
-//             .map(px => px.replace('px', ''))
-//             .map(px => parseInt(px, 10) / remBaseline)
-//             .map(x => `${x}rem`)
-//         const [x, y] = convertedValues
-//
-//         return `translate(${x}, ${y})`
-//     }
-//
-//     render() {
-//         const {children, remBaseline = 16, style} = this.props
-//         const child = React.Children.only(children)
-//
-//         const editedStyle = {
-//             ...child.props.style,
-//             ...style,
-//             transform: this.translateTransformToRem(style.transform, remBaseline),
-//         }
-//
-//         return React.cloneElement(child, {
-//             ...child.props,
-//             ...this.props,
-//             style: editedStyle
-//         })
-//     }
-// }
-//
-
-// ========================================
 
 ReactDOM.render(
-    <App/>,
+    <App/>
+    ,
     document.getElementById('root')
 );
 
