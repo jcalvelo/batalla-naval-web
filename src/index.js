@@ -1,6 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import './bootstrap.min.css';
 import './index.css';
+
 import Draggable from "react-draggable";
 import Pusher from 'pusher-js';
 
@@ -19,32 +21,49 @@ class Ship extends React.Component {
             height = 60;
         }
 
+        let backgroundImageClass = '';
+        console.log(this.props.shipData.id)
+        switch (this.props.shipData.id) {
+            case 'carrier':
+                backgroundImageClass = this.props.shipData.isVertical ? 'carrierV' : 'carrierH';
+                break;
+            case 'battleship':
+                backgroundImageClass = this.props.shipData.isVertical ? 'battleshipV' : 'battleshipH';
+                break;
+            case 'submarine':
+                backgroundImageClass = this.props.shipData.isVertical ? 'submarineV' : 'submarineH';
+                break;
+            case 'destroyer':
+                backgroundImageClass = this.props.shipData.isVertical ? 'destroyerV' : 'destroyerH';
+                break
+            case 'cruiser':
+                backgroundImageClass = this.props.shipData.isVertical ? 'cruiserV' : 'cruiserH';
+                break;
+            default:
+                backgroundImageClass = '';
+                break;
+        }
 
         const shipStyle = {
             height: `${height}px`,
             width: `${width}px`
         };
         return (
-
             <Draggable grid={[60, 60]} onDrag={this.props.onDrag}
                        bounds='body' onStart={() => this.props.dragEnabled}>
-                <div style={shipStyle} className="ship" id={this.props.id}>
+                <div style={shipStyle} className={backgroundImageClass} id={this.props.id}>
 
                     {function () {
                         if (this.props.dragEnabled) {
                             return (
-                                <button onClick={() => {
+                                <button className="btn" style={{fontSize: '25px'}} onClick={() => {
                                     this.props.rotate(this.props.id)
-                                }}>R
+                                }}>🔄
                                 </button>
                             )
                         }
                     }.call(this)}
 
-
-                    <div>x: {this.props.shipData.deltaPosition.x.toFixed(0)},
-                        y: {this.props.shipData.deltaPosition.y.toFixed(0)}</div>
-                    {/*<img src='placeholderShip.png' alt='Ship Image'/>*/}
                 </div>
             </Draggable>
 
@@ -89,7 +108,7 @@ class Home extends React.Component {
                     borderRightStyle: 'solid',
                 }}>
 
-                    <button style={{height: '5rem', alignSelf: "center"}} onClick={() => {
+                    <button className="btn btn-primary" style={{height: '5rem', alignSelf: "center"}} onClick={() => {
                         this.newGameRoom();
                     }}>Crear una Sala
                     </button>
@@ -107,9 +126,15 @@ class Home extends React.Component {
                         this.setState({
                             joinCode: e.target.value
                         })
-                    }} type="text" id="gameId" name="gameId"/>
+                    }}
+                           onKeyDown={(e) => {
+                               if (e.code === 'Enter' || e.code === 'NumpadEnter') {
+                                   this.joinGameRoom();
+                               }
+                           }}
+                           type="text" id="gameId" name="gameId"/>
                     <br/>
-                    <button onClick={() => {
+                    <button className="btn btn-secondary" onClick={() => {
                         this.joinGameRoom();
                     }}>Unirse un Juego
                     </button>
@@ -125,13 +150,13 @@ function TargetingCell(props) {
         case 'hit':
             return (
                 <div key={`targeting${props.i}`} className="grid-item">
-                    H
+                    🔥
                 </div>
             )
         case 'water':
             return (
                 <div key={`targeting${props.i}`} className="grid-item">
-                    W
+                    💧
                 </div>
             )
         case 'shot':
@@ -144,7 +169,7 @@ function TargetingCell(props) {
             return (
                 <div key={`targeting${props.i}`} className="grid-item">
                     <button className="cellButton"
-                            onClick={() => props.onClick(props.i)}>{props.i}</button>
+                            onClick={() => props.onClick(props.i)}>{getCoord(props.i)}</button>
                 </div>
             )
 
@@ -288,12 +313,12 @@ class App extends React.Component {
             const row = ship.deltaPosition.y / 60;
             const col = ship.deltaPosition.x / 60;
             if (ship.isVertical) {
-                shipPositionIsValid = shipPositionIsValid && (this.inRange(row, 0, 10 - ship.size) && this.inRange(col, 0, 9));
+                shipPositionIsValid = shipPositionIsValid && (inRange(row, 0, 10 - ship.size) && inRange(col, 0, 9));
                 for (let j = 0; j < ship.size; j++) {
                     tableroShips[(row * 10) + (10 * j) + col] += 1;
                 }
             } else {
-                shipPositionIsValid = shipPositionIsValid && (this.inRange(row, 0, 9) && this.inRange(col, 0, 10 - ship.size));
+                shipPositionIsValid = shipPositionIsValid && (inRange(row, 0, 9) && inRange(col, 0, 10 - ship.size));
                 for (let j = 0; j < ship.size; j++) {
                     tableroShips[(row * 10) + j + col] += 1;
                 }
@@ -394,13 +419,16 @@ class App extends React.Component {
             this.processShots();
         })
         channel.bind('shotsResult', data => {
+
+            console.log(data)
+
             if (data.player === '1' && data.result) {
                 this.setState({
-                    player1Score: this.state.player1Score + 1
+                    player2Score: this.state.player2Score + 1
                 })
             } else if (data.player === '2' && data.result) {
                 this.setState({
-                    player2Score: this.state.player2Score + 1
+                    player1Score: this.state.player1Score + 1
                 })
             }
 
@@ -443,7 +471,7 @@ class App extends React.Component {
 
     fireShot(i) {
         if (!this.state.myShotReady) {
-            const shotConfirmed = window.confirm(`Confirme que quiere disparar en la posicion ${i + 1}`)
+            const shotConfirmed = window.confirm(`Confirme que quiere disparar en la posicion ${getCoord(i)}`)
             if (shotConfirmed) {
 
 
@@ -506,7 +534,7 @@ class App extends React.Component {
                 }
                 const shipBoardMarkup = []
                 for (let i = 0; i < 100; i++) {
-                    shipBoardMarkup.push(<div key={i} className="grid-item">{i}</div>)
+                    shipBoardMarkup.push(<div key={i} className="grid-item">{getCoord(i)}</div>)
                 }
                 return (
                     <div>
@@ -535,7 +563,8 @@ class App extends React.Component {
                                         )
                                     } else if (!this.state.myShipsReady) {
                                         return (
-                                            <button style={{width: '100%', height: '60px'}}
+                                            <button className="btn btn-outline-success"
+                                                    style={{width: '600px', height: '60px'}}
                                                     onClick={() => this.confirmarPosicionBarcos()}>Confirmar Barcos
                                             </button>
                                         )
@@ -573,11 +602,6 @@ class App extends React.Component {
     }
 
 
-    //Aux func
-    inRange(number, min, max) {
-        return (number >= min && number <= max);
-    }
-
     async postData(url = '', data = {}) {
         // Opciones por defecto estan marcadas con un *
         const response = await fetch(url, {
@@ -597,6 +621,15 @@ class App extends React.Component {
     }
 }
 
+function getCoord(i) {
+    const letterCoords = 'ABCDEFGHIJ'
+
+    return `${letterCoords[Math.floor(i / 10)]}${(i % 10) + 1}`;
+}
+
+function inRange(number, min, max) {
+    return (number >= min && number <= max);
+}
 
 ReactDOM.render(
     <App/>

@@ -74,13 +74,53 @@ body {
     float: left;
 }
 
-.ship {
-    background: darkred;
-    /*background-image: url('./placeholderShip.png');*/
+
+.carrierV, .carrierH, .battleshipV, .battleshipH, .submarineV, .submarineH, .destroyerV, .destroyerH, .cruiserV, .cruiserH {
     border: 1px solid #999;
     border-radius: .3rem;
     position: absolute;
 }
+
+.carrierV {
+    background-image: url('shipImages/carrier/carrierV.png');
+}
+
+.carrierH {
+    background-image: url('shipImages/carrier/carrierH.png');
+}
+
+.battleshipV {
+    background-image: url('shipImages/battleship/battleshipV.png');
+}
+
+.battleshipH {
+    background-image: url('shipImages/battleship/battleshipH.png');
+}
+
+.submarineV {
+    background-image: url('shipImages/submarine/submarineV.png');
+}
+
+.submarineH {
+    background-image: url('shipImages/submarine/submarineH.png');
+}
+
+.destroyerV {
+    background-image: url('shipImages/destroyer/destroyerV.png');
+}
+
+.destroyerH {
+    background-image: url('shipImages/destroyer/destroyerH.png');
+}
+
+.cruiserV {
+    background-image: url('shipImages/cruiser/cruiserV.png');
+}
+
+.cruiserH {
+    background-image: url('shipImages/cruiser/cruiserH.png');
+}
+
 
 .no-pointer-events {
     pointer-events: none;
