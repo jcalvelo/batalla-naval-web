@@ -22,7 +22,6 @@ class Ship extends React.Component {
         }
 
         let backgroundImageClass = '';
-        console.log(this.props.shipData.id)
         switch (this.props.shipData.id) {
             case 'carrier':
                 backgroundImageClass = this.props.shipData.isVertical ? 'carrierV' : 'carrierH';
@@ -48,6 +47,26 @@ class Ship extends React.Component {
             height: `${height}px`,
             width: `${width}px`
         };
+
+        const hitmarks = [];
+
+        for (let i = 0; i < this.props.shipData.size; i++) {
+            if (this.props.shipData.health[i]) {
+                hitmarks.push(
+                    <button key={i} className="btn" style={{fontSize: '25px', width: '60px', height: '60px'}}>
+                        🔥
+                    </button>
+                )
+            } else {
+                hitmarks.push(
+                    <button key={i} className="btn" style={{fontSize: '25px', width: '60px', height: '60px'}}>
+
+                    </button>
+                )
+            }
+
+        }
+
         return (
             <Draggable grid={[60, 60]} onDrag={this.props.onDrag}
                        bounds='body' onStart={() => this.props.dragEnabled}>
@@ -60,6 +79,13 @@ class Ship extends React.Component {
                                     this.props.rotate(this.props.id)
                                 }}>🔄
                                 </button>
+                            )
+                        } else {
+                            return (
+                                <div>
+                                    {hitmarks}
+                                </div>
+
                             )
                         }
                     }.call(this)}
@@ -207,6 +233,7 @@ class App extends React.Component {
             gameState: 'home',
             roomCode: '',
             firstPlayer: null,
+            SunkenShips: [],
         }
 
         this.state.ships[0] = {
@@ -215,6 +242,9 @@ class App extends React.Component {
                 x: 0, y: 0
             },
             size: 5,
+            health: Array(5).fill(false),
+            occupiedCells: [],
+            isAlive: true,
             isVertical: false
         }
         this.state.ships[1] = {
@@ -223,6 +253,9 @@ class App extends React.Component {
                 x: 0, y: 0
             },
             size: 4,
+            health: Array(4).fill(false),
+            occupiedCells: [],
+            isAlive: true,
             isVertical: false
         }
         this.state.ships[2] = {
@@ -231,6 +264,9 @@ class App extends React.Component {
                 x: 0, y: 0
             },
             size: 3,
+            health: Array(3).fill(false),
+            occupiedCells: [],
+            isAlive: true,
             isVertical: false
         }
         this.state.ships[3] = {
@@ -239,6 +275,9 @@ class App extends React.Component {
                 x: 0, y: 0
             },
             size: 3,
+            health: Array(3).fill(false),
+            occupiedCells: [],
+            isAlive: true,
             isVertical: false
         }
         this.state.ships[4] = {
@@ -247,6 +286,9 @@ class App extends React.Component {
                 x: 0, y: 0
             },
             size: 2,
+            health: Array(2).fill(false),
+            occupiedCells: [],
+            isAlive: true,
             isVertical: false
         }
     }
@@ -309,20 +351,26 @@ class App extends React.Component {
 
         let shipPositionIsValid = true;
         for (let i = 0; i < this.state.ships.length; i++) {
-            const ship = this.state.ships[i];
+            const ships = this.state.ships;
+            const ship = ships[i];
             const row = ship.deltaPosition.y / 60;
             const col = ship.deltaPosition.x / 60;
             if (ship.isVertical) {
                 shipPositionIsValid = shipPositionIsValid && (inRange(row, 0, 10 - ship.size) && inRange(col, 0, 9));
                 for (let j = 0; j < ship.size; j++) {
                     tableroShips[(row * 10) + (10 * j) + col] += 1;
+                    ship.occupiedCells.push(((row * 10) + (10 * j) + col).toString());
                 }
             } else {
                 shipPositionIsValid = shipPositionIsValid && (inRange(row, 0, 9) && inRange(col, 0, 10 - ship.size));
                 for (let j = 0; j < ship.size; j++) {
                     tableroShips[(row * 10) + j + col] += 1;
+                    ship.occupiedCells.push(((row * 10) + j + col).toString());
                 }
             }
+            this.setState({
+                ships: ships
+            })
 
         }
 
@@ -348,7 +396,7 @@ class App extends React.Component {
             }
             this.postData('https://batalla-naval-functions.azurewebsites.net/api/ShipsReady?code=IlFCqJEehwONb7V4vayRl94ImqVUlboPTPYEGKOzxwSogjnxCaMaCg==', data)
                 .then(data => {
-                    console.log(data); // JSON data parsed by `data.json()` call
+                    // console.log(data); // JSON data parsed by `data.json()` call
                 });
 
 
@@ -402,6 +450,17 @@ class App extends React.Component {
         channel.bind('chat', data => {
 
         })
+
+        channel.bind('shipSunk', data => {
+
+            if ((this.state.firstPlayer && data.player === '2') || (!this.state.firstPlayer && data.player === '1')) {
+
+                const sunkenshipsAux = this.state.SunkenShips;
+                sunkenshipsAux.push(data.shipSunk);
+
+                this.setState({SunkenShips: sunkenshipsAux})
+            }
+        })
         channel.bind('shipsReady', data => {
             if ((this.state.firstPlayer && data.player === '2') || (!this.state.firstPlayer && data.player === '1')) {
                 this.setState({
@@ -410,6 +469,7 @@ class App extends React.Component {
             }
         })
         channel.bind('shots', data => {
+            // console.log(data)
             if ((this.state.firstPlayer && data.player === '2') || (!this.state.firstPlayer && data.player === '1')) {
                 this.setState({
                     incomingShotReady: true,
@@ -419,8 +479,7 @@ class App extends React.Component {
             this.processShots();
         })
         channel.bind('shotsResult', data => {
-
-            console.log(data)
+            // console.log(data)
 
             if (data.player === '1' && data.result) {
                 this.setState({
@@ -461,10 +520,35 @@ class App extends React.Component {
                 this.setState({
                     targetingBoard: auxTargetingBoard,
                     incomingShotReady: false,
-                    incomingShotCell: -1,
+                    // incomingShotCell: -1,
                     myShotReady: false,
-                    myShotCell: -1,
+                    // myShotCell: -1,
                 })
+                // }
+            } else if ((this.state.firstPlayer && data.player === '1') || (!this.state.firstPlayer && data.player === '2')) {
+
+                const ships = this.state.ships;
+                const ship = ships.find(elem => elem.occupiedCells.includes(this.state.incomingShotCell))
+                if (ship) {
+                    const shotPos = ship.occupiedCells.indexOf(this.state.incomingShotCell);
+
+                    ship.health[shotPos] = true;
+
+                    if (!(ship.health.some(h => !h))) {
+
+                        const data = {
+                            shipSunk: ship.id,
+                            player: this.state.firstPlayer ? 1 : 2,
+                            roomCode: this.state.roomCode
+                        }
+                        this.postData('https://batalla-naval-functions.azurewebsites.net/api/ShipSunk?code=bq3mxN5WpTolL19k2XYP8drSnqqNiX4uerkwfFXuKrG1a60W63ohQA==', data)
+                            .then(data => {
+                                // console.log(data); // JSON data parsed by `data.json()` call
+                            });
+                    }
+
+                    this.setState({ships: ships})
+                }
             }
         })
     }
@@ -483,7 +567,7 @@ class App extends React.Component {
 
                 this.postData('https://batalla-naval-functions.azurewebsites.net/api/FireShot?code=GUicII27OCGNM2EXbQ/631qEHzUNVSF7svcPcjdnM9jYxNhxdFFIbw==', data)
                     .then(data => {
-                        console.log(data); // JSON data parsed by `data.json()` call
+                        // console.log(data); // JSON data parsed by `data.json()` call
                     });
 
 
@@ -498,6 +582,15 @@ class App extends React.Component {
         }
     }
 
+    sunkenShipList() {
+        const markup = [];
+        if (this.state.SunkenShips.length > 0) {
+            for (const sunkenShip of this.state.SunkenShips) {
+                markup.push(<li className='list-unstyled'>{sunkenShip}</li>)
+            }
+        }
+        return markup;
+    }
 
     processShots() {
         if (this.state.incomingShotReady && this.state.myShotReady) {
@@ -510,7 +603,7 @@ class App extends React.Component {
 
             this.postData('https://batalla-naval-functions.azurewebsites.net/api/ShotResult?code=qRX2msyeXqiajjtEwyGUEJDLag3HOaYlYK2sBPeFFReDTXPrzUm2EA==', data)
                 .then(data => {
-                    console.log(data); // JSON data parsed by `data.json()` call
+                    // console.log(data); // JSON data parsed by `data.json()` call
                 });
 
         }
@@ -586,6 +679,16 @@ class App extends React.Component {
                                 }.call(this)}
                             </div>
                         </div>
+
+                        <div style={{position: 'absolute', top: '0.2rem', left: '40vw'}}>
+                            Barcos undidos:
+                            <hr style={{margin: '0', padding: '0'}}/>
+                            <ul className="list-group" style={{fontSize: '12px'}}>
+                                {this.sunkenShipList()}
+                            </ul>
+
+                        </div>
+
                     </div>
                 );
             case 'finished':
